@@ -34,3 +34,26 @@ hasWonBoard <- function(board,player){
   return(F)
 }
 
+# Return a list of valid moves
+getValidMove <- function(board, forcedMove, boardStatus){
+  validMove <- list()
+  
+  # Check if the subBoard is already won by a player
+  if (boardStatus[forcedMove[1], forcedMove[2]] == 0){
+    for (subX in 1:3)
+      for (subY in 1:3)
+        if (board[subX, subY, forcedMove[1], forcedMove[2]] == 0)
+          validMove <- append(validMove, list(c(subX, subY, forcedMove[1], forcedMove[2])))  # Add the valid move
+  }
+  else
+    for (x in 1:3)
+      for (y in 1:3)
+        if (boardStatus[x, y] == 0)
+          for (subX in 1:3)
+            for (subY in 1:3)
+              if (board[subX, subY,x, y] == 0)
+                validMove <- append(validMove, list(c(subX, subY, x, y)))  # Add the valid move
+              
+              return (validMove)
+}
+

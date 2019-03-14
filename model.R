@@ -1,14 +1,14 @@
-masterBoard = array(0, dim = c(3,3,3,3))
-boardStatus = matrix(0, nrow = 3, ncol = 3, byrow = T)
+masterBoard <- array(0, dim = c(3,3,3,3))
+boardStatus <- matrix(0, nrow = 3, ncol = 3, byrow = T)
 
 hasWonBoard <- function(board,player){
-  hasWon = F
-  dimension = length(board[1,])
+  hasWon <- F
+  dimension <- length(board[1,])
   
   #First check horizontal
   for(row in 1:dimension){
     if(board[row,1] == board[row,2] && board[row,2] == board[row,3] && board[row,2] == player){
-      hasWon = T
+      hasWon <- T
       break
     }
   }
@@ -18,7 +18,7 @@ hasWonBoard <- function(board,player){
   #Check vertical
   for(col in 1:dimension){
     if(board[1,col] == board[2,col] && board[2,col] == board[3,col] && board[2,col] == player){
-      hasWon = T
+      hasWon <- T
       break
     }
   }
@@ -56,4 +56,27 @@ getValidMove <- function(board, forcedMove, boardStatus){
               
               return (validMove)
 }
+
+#player move on master board
+doMove <- function(position,player,board){
+  if(board[postion[1],position[2],position[3],position[4]] == 0){
+    board[postion[1],position[2],position[3],position[4]] <- player#Ask MD about positions
+  }
+  return(board)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

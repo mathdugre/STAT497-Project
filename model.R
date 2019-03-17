@@ -65,6 +65,27 @@ doMove <- function(position,player,board){
   return(board)
 }
 
+#prints single individual tile of TTT
+printBoard <- function(board){
+  for(i in 1:3){
+    cat(board[i,1]," | ",board[i,2]," | ",board[i,3],"\n")
+    if(i != 3){
+      cat("--------------\n")
+    }
+  }
+}
+
+printMasterBoard <- function(masterBoard){
+  for(i in 1:3){
+    for(j in 1:3){
+      cat(c(masterBoard[i,j,1,], " | ", masterBoard[i,j,2,], " | ", masterBoard[i,j,3,],"\n"))
+    }
+    if(i != 3){
+      cat("--------------------------\n")
+    }
+  }
+}
+
 
 
 

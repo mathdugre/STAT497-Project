@@ -40,7 +40,7 @@ getValidMove <- function(board, forcedMove, boardStatus){
   if (boardStatus[forcedMove[1], forcedMove[2]] == 0){
     for (subX in 1:3)
       for (subY in 1:3)
-        if (board[forcedMove[1], subX, subY, forcedMove[2]] == 0)
+        if (board[forcedMove[1], forcedMove[2], subX, subY] == 0)
           validMove <- append(validMove, list(c(forcedMove[1], forcedMove[2], subX, subY)))  # Add the valid move
           fullBoard <- F
   }

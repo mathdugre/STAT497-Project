@@ -1,6 +1,3 @@
-masterBoard <- array(0, dim = c(3,3,3,3))
-boardStatus <- matrix(0, nrow = 3, ncol = 3, byrow = T)
-
 hasWonBoard <- function(board,player){
   hasWon <- F
   dimension <- length(board[1,])
@@ -37,24 +34,30 @@ hasWonBoard <- function(board,player){
 # Return a list of valid moves
 getValidMove <- function(board, forcedMove, boardStatus){
   validMove <- list()
+  fullBoard <- T
   
-  # Check if the subBoard is already won by a player
+  # subBoard not won
   if (boardStatus[forcedMove[1], forcedMove[2]] == 0){
     for (subX in 1:3)
       for (subY in 1:3)
         if (board[forcedMove[1], subX, subY, forcedMove[2]] == 0)
           validMove <- append(validMove, list(c(forcedMove[1], forcedMove[2], subX, subY)))  # Add the valid move
+          fullBoard <- F
   }
-  else
-    for (x in 1:3)
-      for (y in 1:3)
-        if (boardStatus[x, y] == 0)
-          for (subX in 1:3)
-            for (subY in 1:3)
-              if (board[x, y, subX, subY] == 0)
-                validMove <- append(validMove, list(c(x, y, subX, subY)))  # Add the valid move
+  if (fullBoard == F){
+    return (validMove)
+  }
+  
+  # All moves that are in non-won subBoard and not played
+  for (x in 1:3)
+    for (y in 1:3)
+      if (boardStatus[x, y] == 0)
+        for (subX in 1:3)
+          for (subY in 1:3)
+            if (board[x, y, subX, subY] == 0)
+              validMove <- append(validMove, list(c(x, y, subX, subY)))  # Add the valid move
               
-              return (validMove)
+  return (validMove)
 }
 
 # player move on master board
@@ -101,44 +104,6 @@ printMasterBoard <- function(masterBoard){
     }
   }
 }
-
-# sample driver
-nbMoves <- 81
-listAllMoves <- vector(mode = "list", nbMoves)
-index <- 1
-for(i in 1:3)
-  for(j in 1:3)
-    for(k in 1:3)
-      for(l in 1:3){
-        listAllMoves[[index]] <- c(i,j,k,l)
-        index <- index + 1
-      }
-playerTurn <- 1
-print(listAllMoves)
-while(length(listAllMoves) > 0){
-  # random sample move - not following game rules
-  move <- sample(listAllMoves, size = 1)
-  
-  # player 1
-  if(playerTurn == 1){
-    masterBoard[move[[1]][1],move[[1]][2],move[[1]][3],move[[1]][4]] <- playerTurn
-    playerTurn <- 2
-  }
-  else{
-    masterBoard[move[[1]][1],move[[1]][2],move[[1]][3],move[[1]][4]] <- playerTurn
-    playerTurn <- 1
-  }
-  
-  printMasterBoard(masterBoard)
-  # remove move from list
-  listAllMoves <- removeElt(listAllMoves,move[[1]])
-}
-
-
-
-
-
-
 
 
 

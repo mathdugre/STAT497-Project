@@ -63,7 +63,7 @@ getValidMove <- function(board, forcedMove, boardStatus){
 # player move on master board
 doMove <- function(position,player,board){
   if(board[postion[1],position[2],position[3],position[4]] == 0){
-    board[postion[1],position[2],position[3],position[4]] <- player#Ask MD about positions
+    board[postion[1],position[2],position[3],position[4]] <- player
   }
   return(board)
 }

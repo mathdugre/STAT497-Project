@@ -2,6 +2,10 @@
 
 source("model.r")
 
+simulUTTT <- function(theseed){
+# To reproduce experiment
+set.seed(theseed)
+  
 # Start game
 masterBoard <- array(0, dim = c(3,3,3,3))
 statusBoard <- matrix(0, nrow = 3, ncol = 3, byrow = T)
@@ -18,8 +22,8 @@ forcedMove <- c(move[3], move[4])
 player <- player %% 2 + 1
 
 # Debug
-cat("--------------------------\n")
-printMasterBoard(masterBoard)
+# cat("--------------------------\n")
+# printMasterBoard(masterBoard)
 
 # The game continue normally
 while (T) {
@@ -50,21 +54,31 @@ while (T) {
   player <- player %% 2 + 1  # Change player
   
   # Debug
-  cat("**************************\n")
-  printMasterBoard(masterBoard)
-  cat("**************************\n")
-  printBoard(statusBoard)
+  # cat("**************************\n")
+  # printMasterBoard(masterBoard)
+  # cat("**************************\n")
+  # printBoard(statusBoard)
 }
 # Debug
-cat("**************************\n")
-printMasterBoard(masterBoard)
-cat("**************************\n")
-printBoard(statusBoard)
+# cat("**************************\n")
+# printMasterBoard(masterBoard)
+# cat("**************************\n")
+# printBoard(statusBoard)
 
-if(winner == 0){
-  cat("Draw\n")
-} else if(winner == 1){
-    cat("Player 1 wins\n")
-} else{
-    cat("Player 2 wins\n")
+
+
+# if(winner == 0){
+  # cat("Draw\n")
+# } else if(winner == 1){
+    # cat("Player 1 wins\n")
+# } else{
+    # cat("Player 2 wins\n")
+# }
+
+return(winner)
+
 }
+
+
+
+

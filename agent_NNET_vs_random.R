@@ -1,3 +1,5 @@
+require(keras)
+
 # convert board to a vector for the nnet
 boardToVector <- function(board){
   # take elments in board an lists them from left to right, top to bottom as a vector
@@ -110,9 +112,24 @@ for(i in 1:nepis){
 # Encode into a neural network input form
 
 toStateLayer <- function(state){
-  # takes a state vecotr (sequence of 0,1 and 2's) and returns vector of bits of 3*81 long
-  # for player 1, player 2 and unoccupied
+  # takes a state vector (sequence of 0,1 and 2's) and returns vector of bits of 3*81 long
+  # for player 1, player 2 and unoccupied (i.e  0)
   stateLayer <- vector("numeric", 3*81)
+  seqlen <- 81
+  
+  for(i in 1:seqlen){
+    if(state[i] == 0){
+      stateLayer[i+2*seqlen] <- 1
+    }
+    else if(state[i] == 1){
+      stateLayer[i] <- 1
+    }
+    else{
+      stateLayer[i+seqlen] <- 1
+    }
+  }
+  
+  return(stateLayer)
 }
 
 

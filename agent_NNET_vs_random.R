@@ -1,4 +1,4 @@
-require(keras)
+
 
 # convert board to a vector for the nnet
 boardToVector <- function(board){
@@ -111,7 +111,7 @@ for(i in 1:nepis){
 
 # Encode into a neural network input form
 
-toStateLayer <- function(state){
+stateToInLayer <- function(state){
   # takes a state vector (sequence of 0,1 and 2's) and returns vector of bits of 3*81 long
   # for player 1, player 2 and unoccupied (i.e  0)
   stateLayer <- vector("numeric", 3*81)
@@ -131,6 +131,63 @@ toStateLayer <- function(state){
   
   return(stateLayer)
 }
+
+# extract x and y values for nnet
+yDataAs1 <- vector("numeric", nepis)
+yDataAs2 <- vector("numeric", nepis)
+
+for(i in 1:nepis){
+  yDataAs1[i] <- RSDataAs1[[i]][[1]]
+  yDataAs2[i] <- RSDataAs2[[i]][[1]]
+}
+
+xDataAs1 <- rep(NULL,nepis) # will become list of encoded matrices
+xDataAs2 <- rep(NULL,nepis)
+
+for(i in 1:nepis){
+  dim <- dim(RSDataAs1[[i]][[2]])[1] # number of rows in matrix episode
+  xDataAs1[[i]] <- matrix(0, nrow = dim, ncol = 3*81, byrow = T)
+  for(j in 1:dim){
+    xDataAs1[[i]][j,] <- stateToInLayer(RSDataAs1[[i]][[2]][j,])
+  }
+  dim <- dim(RSDataAs2[[i]][[2]])[1] # number of rows in matrix episode
+  xDataAs2[[i]] <- matrix(0, nrow = dim, ncol = 3*81, byrow = T)
+  for(j in 1:dim){
+    xDataAs2[[i]][j,] <- stateToInLayer(RSDataAs2[[i]][[2]][j,])
+  }
+}
+
+library(keras)
+
+# bulid neural network using keras
+model1 <- keras_model_sequential()
+
+# build layer for model
+# input layer: 3*81 which is a sequence of bits 81 for the player 1 position, 81 for player 2 and
+# 81 for the unoccupied spaces
+# 3 hidden layers, 81 nodes each
+# ouput layer: 3 nodes corersponding to winning, loosing or drawing (for either player)
+
+model1 %>%
+  layer_dense(units = 81,
+              kernel_initializer = "uniform",
+              activation = 'relu',
+              input_shape = c(3*81)) %>%
+  layer_dense(units = 81,
+              kernel_intializer = "uniform",
+              activation = 'relu') %>%
+  layer_dense(units = 81,
+              kernel_initializer = "uniform",
+              activation = 'relu') %>%
+  layer_dense(units = 3, activation = "softmax")
+
+# compile model
+model1 %>% compile(loss = 'categorical_crossentropy',
+                  optimizer = optimizer_rmsprop(),
+                  metrics = c('accuracy'))
+
+# train nnet
+
 
 
 

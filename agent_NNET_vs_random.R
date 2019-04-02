@@ -1,5 +1,3 @@
-
-
 # convert board to a vector for the nnet
 boardToVector <- function(board){
   # take elments in board an lists them from left to right, top to bottom as a vector
@@ -157,9 +155,28 @@ for(i in 1:nepis){
   }
 }
 
-library(keras)
+# last setup for the nnet
+# need to create a big matrix for x that will store all the episodes continuously
+x_train <- do.call(rbind,xDataAs1)
+# create a y_test vector which has same dimension as nrows(x_test)
+y_train <- vector("numeric",dim(x_train)[1])
+n <- 0
+for(i in 1:nepis){
+  nprime <- dim(xDataAs1[[i]])[1]
+  # cat(n,nprime+n,yDataAs1[ctr],"\n")
+  y_train[n+1:nprime+n] <- yDataAs1[i]
+  # cat(y_train[n+1:nprime+n],"\n")
+  n <- nprime + n
+  # cat("---------\n")
+}
 
-# bulid neural network using keras
+
+library(keras)
+use_python("\\Users\\csdp\\Anaconda3")
+
+
+
+# build neural network using keras
 model1 <- keras_model_sequential()
 
 # build layer for model
@@ -170,25 +187,160 @@ model1 <- keras_model_sequential()
 
 model1 %>%
   layer_dense(units = 81,
-              kernel_initializer = "uniform",
               activation = 'relu',
-              input_shape = c(3*81)) %>%
+              input_shape = c(243)) %>%
   layer_dense(units = 81,
-              kernel_intializer = "uniform",
               activation = 'relu') %>%
   layer_dense(units = 81,
-              kernel_initializer = "uniform",
               activation = 'relu') %>%
   layer_dense(units = 3, activation = "softmax")
 
 # compile model
-model1 %>% compile(loss = 'categorical_crossentropy',
+model1 %>% compile(loss = 'binary_crossentropy',
                   optimizer = optimizer_rmsprop(),
                   metrics = c('accuracy'))
 
-# train nnet
+  # train nnet
+  history <- model1 %>% fit(
+    x_train,to_categorical(y_train[1:dim(x_train)[1]],num_classes = 3),
+    epochs = 100, batch_size = 6000,
+    validation_split = 0.2
+  )
 
+# use the network to win - completely greedy method
+# create helper function that selects action based on mode
+  require(nnet) # for the which.is.max
+  selectMove <- function(listMoves, board, playingAs, mode = "greedy"){
+    if(length(listMoves) == 0)
+      return("No actions to select from!")
+    else if(length(listMoves) == 1)
+      return(listMoves[[1]])
+    else
+    {
+      # go through every move
+      boardList <- rep(NULL, length(listMoves))
+      for(i in 1:length(listMoves)){
+        tempBoard <- board
+        move <- listMoves[[i]]
+        tempBoard[move[1],move[2],move[3],move[4]] <- playingAs
+        boardList[[i]] <- boardToVector(tempBoard)
+      }
 
+      # encode the boardList to nnet input
+      encodedBoardMat <- matrix(0,nrow=length(boardList),ncol=243,byrow=T)
+      for(i in 1:length(boardList)){
+        encodedBoardMat[i,] <- stateToInLayer(boardList[[i]])
+      }
+      
+      proba <- model1 %>% predict_proba(encodedBoardMat)
+      
+      probaWin <- proba[,3] # third index is probability of winning
+      
+      if(mode == "greedy"){
+        indexMax <- which.is.max(probaWin)
+        optimalMove <- listMoves[[indexMax]]
+      }
+      # print(optimalMove)
+      return(optimalMove)
+    }
+  }
+  
+  # simulate with states
+  simulUTTTNNET <- function(theseed){
+    # To reproduce experiment
+    set.seed(theseed)
+    
+    # Start game
+    masterBoard <- array(0, dim = c(3,3,3,3))
+    statusBoard <- matrix(0, nrow = 3, ncol = 3, byrow = T)
+    winner <- 0  # Initially a tie
+    
+    # track the states 
+    boardStates <- matrix(0, ncol = 81)
+    
+    # First move
+    player <- 1
+    
+    # nnet method
+    validMove <- list()
+    for(x in 1:3)
+      for(y in 1:3)
+        for(subX in 1:3)
+          for(subY in 1:3)
+            validMove <- append(validMove, list(c(x, y, subX, subY)))
+    
+    move <- selectMove(validMove,masterBoard,playingAs = 1,mode = "greedy")
 
+    masterBoard[move[1], move[2], move[3], move[4]] <- player
+    forcedMove <- c(move[3], move[4])
+    
+    # cat(move,"|",forcedMove,"\n")
+    
+    player <- player %% 2 + 1
+    
+    # add state to tracker
+    boardStates <- rbind(boardStates, boardToVector(masterBoard))
+    
+    # The game continue normally
+    while (T) {
+      validMoves <- getValidMove(masterBoard, forcedMove, statusBoard)
+      
+      if (length(validMoves) == 0)
+        break
+      
+      if(player == 1){
+      move <- selectMove(validMoves,masterBoard,playingAs = 1,mode = "greedy")
+      }
+      
+      if(player == 2){# opponent plays randomly
+        move <- sample(validMoves, size = 1)
+        move <- move[[1]]
+      }
+      
+      # Play  the move
+      masterBoard[move[1], move[2], move[3], move[4]] <- player
+      forcedMove <- c(move[3], move[4])
+      
+      # Update tracked states
+      boardStates <- rbind(boardStates, boardToVector(masterBoard))
+      
+      # Check for win
+      if(hasWonBoard(masterBoard[move[1], move[2],,], player))
+        statusBoard[move[1], move[2]] <- player  # Won subBoard
+      if(hasWonBoard(statusBoard, player)){
+        winner <- player # Won game
+        break 
+      }
+      
+      player <- player %% 2 + 1  # Change player
+    }
+    
+    return(list(winner,boardStates))
+  }
+  
+  # playing as player 1 - using NNET
+  
+  winsP1 <- 0 
+  lossesP1 <- 0
+  drawsP1 <- 0
+  nepis = 10000
+  
+  winRatioAs1 <- vector("numeric",length = nepis)
+  
+  for(i in 1:nepis){
+    return <- simulUTTTNNET(i+2*nepis)[[1]]
+    
+    if(i %% 100 == 0)
+      print(i)
+    
+    if (return == 0)
+      drawsP1 <- drawsP1 + 1
+    else if(return == 1)
+      winsP1 <- winsP1 + 1
+    else
+      lossesP1 <- lossesP1 + 1
+    
+    winRatioAs1[i] = winsP1/i
+  }  
 
-
+  

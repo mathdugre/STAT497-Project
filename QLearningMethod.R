@@ -65,12 +65,13 @@ vecToActionMapping <- function(actionVec){
 
 # take a state which looks like a ternary representation and convert it to decimal
 stateToDec <- function(boardVec){
-  dec <- 0
+  ternary <- 0
   for(i in 1:length(boardVec)){
-    dec <- dec + boardVec[i]*3^(i-1)
+    ternary <- ternary + boardVec[i]*3^(i-1)
   }
-  return(dec)
+  return(ternary)
 }
+
 
 decToState <- function(numState){
   tern <- decToTern(numState)
@@ -92,7 +93,7 @@ decToTern <- function(decimal){
 reward <- function(winner, playingAs){
   # returns a reward of -1,0,1 based on the winner + who you are playing as
   if(winner == 0)
-    return(0) # want agent to win
+    return(-100) # want agent to win
   else if(winner == 1 && playingAs == 1)
     return(100)
   else if(winner == 1 && playingAs == 2)
@@ -143,23 +144,19 @@ simulUTTT <- function(theseed){
     move <- sample(validMoves, size = 1)
     move <- move[[1]]
     
-    
-    if(player == 1){
+    # Play  the move
     # add current board to state tracker
     currentBoardState <- rbind(currentBoardState, suboardToVector(masterBoard[move[1],move[2],,]))
-    }
     
     # make the action
     masterBoard[move[1], move[2], move[3], move[4]] <- player
     forcedMove <- c(move[3], move[4])
     
-    if(player == 1){
     # add action to state tracker
     actionList <- append(actionList, vecToActionMapping(forcedMove))
-    }
+    
     # Update tracked states
     boardStates <- rbind(boardStates, boardToVector(masterBoard))
-    
     
     # Check for win
     if(hasWonBoard(masterBoard[move[1], move[2],,], player))
@@ -175,7 +172,7 @@ simulUTTT <- function(theseed){
   return(list(winner,boardStates,currentBoardState,actionList))
 }
 # create a dataset that contains runs of random plays (states) + of the winner (rewards)
-nepis <- 10000
+nepis <- 100000
 StateActionReward <- rep(NULL, nepis)
 
 # playing as player 1
@@ -222,13 +219,17 @@ ApplyQLearning <- function(qInit,episodeSimu,stepSize){
 }
 
 # apply q learning
-stepsize <- 0.1
+stepsize1 <- 0.01 
+stepsize2 <- 0.1
+stepsize3 <- 0.2
 
-qEstimQ <- matrix(0,nrow = 3^9, ncol = 9)
+qEstim1 <- matrix(0,nrow = 3^9, ncol = 9)
+qEstim2 <- matrix(0,nrow = 3^9, ncol = 9)
+qEstim3 <- matrix(0,nrow = 3^9, ncol = 9)
 
-
-qEstimQ <- ApplyQLearning(qEstimQ,StateActionReward,stepsize)
-
+qEstim1 <- ApplyQLearning(qEstim1,StateActionReward,stepsize1)
+qEstim2 <- ApplyQLearning(qEstim2,StateActionReward,stepsize2)
+qEstim3 <- ApplyQLearning(qEstim3,StateActionReward,stepsize3)
 
 # this agent uses qEstim from Q learning to play against a random bot
 simulUTTTQLearning <- function(theseed,qEstim){
@@ -271,17 +272,10 @@ simulUTTTQLearning <- function(theseed,qEstim){
         randomSuboard <- sample(validMoves,size = 1)
         randomSuboard <- randomSuboard[[1]]
         forcedMove <- c(randomSuboard[1],randomSuboard[2])
-        # restrict valid moves only to that suboard
-        temp <- list()
-        for(i in 1:length(validMoves)){
-          if(validMoves[[i]][1] == forcedMove[1] && validMoves[[i]][2] == forcedMove[2])
-            temp <- append(temp, list(validMoves[[i]]))
-        }
-        validMoves <- temp
       }
       # otherwise player 1 can pick only within sub-board
       # in this case can use qEstim
-      stateDecimal <-  stateToDec(suboardToVector(masterBoard[forcedMove[1],forcedMove[2],,]))
+      stateDecimal <-  stateToDec(masterBoard[forcedMove[1],forcedMove[2],,])
       validActionsDecimal <- c() # list of numbers
       
       # print("I <3 QLearning")
@@ -292,7 +286,7 @@ simulUTTTQLearning <- function(theseed,qEstim){
       }
       
       # find the max action based on values in qEstim
-      maxValue <- -Inf
+      maxValue <- -1000000000
       maxIndex <- -1
       for(actionIndex in validActionsDecimal){
         if(qEstim[stateDecimal+1,actionIndex] > maxValue)
@@ -327,42 +321,39 @@ simulUTTTQLearning <- function(theseed,qEstim){
 # run and find win ratio
 # playing as player 1 - with QLearning technique
 
-wins <- 0 
-draws <- 0
-losses <- 0
+wins1 <- 0 
+wins2 <- 0
+wins3 <- 0
 nepis <- 10000
 
-winRatio <- vector("numeric",length = nepis)
-drawRatio <- vector("numeric",length = nepis)
-lossRatio <- vector("numeric",length = nepis)
+winRatio1 <- vector("numeric",length = nepis)
+winRatio2 <- vector("numeric",length = nepis)
+winRatio3 <- vector("numeric",length = nepis)
 
 for(i in 1:nepis){
-  result <- simulUTTTQLearning(i,qEstimQ)[[1]]
+  winner1 <- simulUTTTQLearning(i,qEstim1)[[1]]
+  winner2 <- simulUTTTQLearning(i,qEstim2)[[1]]
+  winner3 <- simulUTTTQLearning(i,qEstim3)[[1]]
   
-  if (result == 0)
-    draws <- draws + 1
-  else if(result == 1)
-    wins <- wins + 1
-  else
-    losses <- losses + 1
-          
-  winRatio[i] <- wins/i
-  drawRatio[i] <- draws/i
-  lossRatio[i] <- losses/i
+  if (winner1 == 1){
+    wins1 <- 1 + wins1
+  }
+  winRatio1[i] <- wins1/i
+  
+  if (winner2 == 1){
+    wins2 <- 1 + wins2
+  }
+  winRatio2[i] <- wins2/i
+  
+  if (winner3 == 1){
+    wins3 <- 1 + wins3
+  }
+  winRatio3[i] <- wins3/i
+            
 }
 
-# win Ration of about 0.435, 3% imporvement
-plot(x=1:nepis,winRatio,ylab= "Ratios", xlab = "Episodes", type="l",col="darkgreen",ylim = c(0,1))
-lines(drawRatio,col="blue")
-lines(lossRatio,col="red")
-legend("topright",legend=c("Win Ratio","Draw Ratio","Loss Ratio"),
-       col=c("darkgreen","blue","red"),lty=1,cex = 0.8)
-
-
-# print the win, loss and draw rations
-cat("The win ratio given a QL policy was ", winRatio[nepis],"\n")
-cat("The draw ratio given a QL policy was ", drawRatio[nepis],"\n")
-cat("The loss ratio given a QL policy was ", lossRatio[nepis],"\n")
+# worst than the random policy
+plot(x=1:nepis,winRatio1,type="l")
 
 
 

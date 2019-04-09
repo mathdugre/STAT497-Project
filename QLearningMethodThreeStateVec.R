@@ -412,5 +412,3 @@ cat("The win ratio given a QL policy was ", winRatio[nepis],"\n")
 cat("The draw ratio given a QL policy was ", drawRatio[nepis],"\n")
 cat("The loss ratio given a QL policy was ", lossRatio[nepis],"\n")
 
-
-
